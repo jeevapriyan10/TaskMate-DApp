@@ -5,44 +5,55 @@ let contract;
 let accounts = [];
 
 async function connectWallet() {
-  if (window.ethereum) {
-    try {
-      accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      document.getElementById('wallet-status').innerText = `Connected: ${accounts[0]}`;
+  const providerChoice = document.getElementById('providerSelect').value;
 
-      web3 = new Web3(window.ethereum);
-      const response = await fetch('abi.json');
-      const contractABI = await response.json();
-      contract = new web3.eth.Contract(contractABI, contractAddress);
-
-      loadTasks();
-
-      // Listen for account change
-      window.ethereum.on('accountsChanged', (accs) => {
-        accounts = accs;
-        if (accounts.length > 0) {
-          document.getElementById('wallet-status').innerText = `Connected: ${accounts[0]}`;
-          loadTasks();
-        } else {
-          document.getElementById('wallet-status').innerText = 'Wallet not connected';
-          document.getElementById('tasksList').innerHTML = '';
-        }
-      });
-
-      // Listen for network change (optional)
-      window.ethereum.on('chainChanged', () => {
-        window.location.reload();
-      });
-
-      // Disable connect wallet button after connection
-      document.getElementById('connectWalletBtn').disabled = true;
-
-    } catch (error) {
-      alert('User denied wallet connection');
+  if (providerChoice === 'metamask') {
+    if (window.ethereum) {
+      try {
+        accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        web3 = new web3(window.ethereum);
+        document.getElementById('wallet-status').innerText = `Connected (MetaMask): ${accounts[0]}`;
+      } catch (error) {
+        alert('MetaMask connection denied');
+        return;
+      }
+    } else {
+      alert('MetaMask not detected. Please install MetaMask.');
+      return;
     }
-  } else {
-    alert('Please install MetaMask to use this dApp');
+  } else if (providerChoice === 'ganache') {
+    try {
+      web3 = new web3('http://127.0.0.1:7545');
+      accounts = await web3.eth.getAccounts();
+      document.getElementById('wallet-status').innerText = `Connected (Ganache): ${accounts[0]}`;
+    } catch (error) {
+      alert('Failed to connect to Ganache. Is it running on http://127.0.0.1:7545?');
+      return;
+    }
   }
+
+  const response = await fetch('/TaskMate-DApp/abi.json');
+  const abi = await response.json();
+  contract = new web3.eth.Contract(abi, contractAddress);
+
+  loadTasks();
+
+  if (providerChoice === 'metamask') {
+    window.ethereum.on('accountsChanged', (accs) => {
+      accounts = accs;
+      if (accounts.length > 0) {
+        document.getElementById('wallet-status').innerText = `Connected: ${accounts[0]}`;
+        loadTasks();
+      } else {
+        document.getElementById('wallet-status').innerText = 'Wallet not connected';
+        document.getElementById('tasksList').innerHTML = '';
+      }
+    });
+
+    window.ethereum.on('chainChanged', () => window.location.reload());
+  }
+
+  document.getElementById('connectWalletBtn').disabled = true;
 }
 
 async function loadTasks() {
@@ -55,7 +66,7 @@ async function loadTasks() {
 
   tasks.forEach((task, index) => {
     const li = document.createElement('li');
-    li.textContent = task.description + (task.completed ? ' ✅' : '');
+    li.textContent = task.description +' : '+ (task.completed ? 'Done' : 'Pending');
 
     const delBtn = document.createElement('button');
     delBtn.innerText = 'Delete';
@@ -63,31 +74,26 @@ async function loadTasks() {
     delBtn.onclick = () => deleteTask(index);
 
     const toggleBtn = document.createElement('button');
-    toggleBtn.innerText = task.completed ? 'Undo' : 'Complete';
+    toggleBtn.innerText = task.completed ? 'Undo' : 'Completed';
     toggleBtn.className = 'toggleBtn';
     toggleBtn.onclick = () => toggleTask(index);
+
     li.appendChild(toggleBtn);
-    li.appendChild(document.createTextNode(' ')); 
+    li.appendChild(document.createTextNode(' '));
     li.appendChild(delBtn);
     tasksList.appendChild(li);
   });
 }
 
 async function addTask() {
-  if (accounts.length === 0) {
-    alert('Connect your wallet first!');
-    return;
-  }
+  if (accounts.length === 0) return alert('Connect your wallet first!');
 
   const input = document.getElementById('newTask');
   const description = input.value.trim();
-  if (!description) {
-    alert('Enter a task');
-    return;
-  }
+  if (!description) return alert('Enter a task');
 
   try {
-    await contract.methods.addTask(description).send({ from: accounts[0] });
+    await contract.methods.createTask(description).send({ from: accounts[0] });
     input.value = '';
     loadTasks();
   } catch (error) {
@@ -95,17 +101,27 @@ async function addTask() {
   }
 }
 
+async function editTask(index) {
+  if (accounts.length === 0) return alert('Connect your wallet first!');
+
+  const newDescription = prompt('Enter new task description:');
+  if (!newDescription) return;
+
+  try {
+    await contract.methods.editTask(index, newDescription).send({ from: accounts[0] });
+    loadTasks();
+  } catch (error) {
+    alert('Error editing task: ' + error.message);
+  }
+}
 async function toggleTask(index) {
-    if (accounts.length === 0) {
-        alert('Connect your wallet first!');
-        return;
-    }
-    try {
-        await contract.methods.toggleTask(index).send({ from: accounts[0] });
-        loadTasks();
-    } catch (error) {
-        alert('Error toggling task: ' + error.message);
-    }   
+  if (accounts.length === 0) return alert('Connect your wallet first!');
+  try {
+    await contract.methods.toggleTask(index).send({ from: accounts[0] });
+    loadTasks();
+  } catch (error) {
+    alert('Error toggling task: ' + error.message);
+  }
 }
 
 async function deleteTask(index) {
@@ -117,7 +133,25 @@ async function deleteTask(index) {
   }
 }
 
+async function clearTask() {
+  if (accounts.length === 0) return alert('Connect your wallet first!');
+
+  try {
+    await contract.methods.clearTasks().send({ from: accounts[0] });
+    loadTasks();
+  } catch (error) {
+    alert('Error clearing tasks: ' + error.message);
+  }
+}
+
 window.onload = () => {
-  document.getElementById('connectWalletBtn').addEventListener('click', connectWallet);
-  document.getElementById('addTaskBtn').addEventListener('click', addTask);
+    document.getElementById('connectWalletBtn').addEventListener('click', connectWallet);
+    document.getElementById('addTaskBtn').addEventListener('click', addTask);
+    document.getElementById('clearTasksBtn').addEventListener('click', clearTask);
+    document.getElementById('editTaskBtn').addEventListener('click', () => {
+        const index = prompt('Enter task index to edit:');
+        if (index !== null) {
+            editTask(parseInt(index));
+        }
+    });
 };

@@ -3,24 +3,59 @@ body {
   max-width: 600px;
   margin: 20px auto;
   padding: 0 20px;
+  background-color: #f9f9f9;
 }
 
 h1 {
   text-align: center;
+  margin-bottom: 20px;
+}
+
+#providerSelect {
+  padding: 8px;
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+#connectWalletBtn {
+  padding: 8px 16px;
+  font-size: 16px;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#connectWalletBtn:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+#wallet-status {
+  margin: 10px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
 }
 
 #newTask {
   width: 70%;
   padding: 8px;
   font-size: 16px;
+  margin-right: 5px;
 }
-span{
-  white-space: nowrap;
+.button {
+  margin: 5px 5px 10px 0;
 }
-
-#addTaskBtn {
+#addTaskBtn, #clearTasksBtn, #editTaskBtn {
   padding: 8px 16px;
   font-size: 16px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 ul {
@@ -31,18 +66,49 @@ ul {
 li {
   margin: 8px 0;
   padding: 8px;
-  background: #f3f3f3;
-  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 button.deleteBtn {
   background-color: #e74c3c;
   color: white;
   border: none;
-  padding: 4px 8px;
-  border-radius: 3px;
+  padding: 6px 10px;
+  border-radius: 4px;
   cursor: pointer;
+  margin-left: 5px;
+}
+
+button.toggleBtn {
+  background-color: #f1c40f;
+  color: black;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+@media screen and (max-width: 480px) {
+  #newTask {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  button.toggleBtn,
+  button.deleteBtn {
+    width: 100%;
+    margin: 4px 0;
+  }
 }

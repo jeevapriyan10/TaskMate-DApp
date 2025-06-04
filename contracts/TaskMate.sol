@@ -67,6 +67,10 @@ contract TaskMate {
         emit TaskDeleted(_id, msg.sender);
     }
 
+    function clearTasks() public {
+        delete tasks[msg.sender];
+    }
+
     function getTasks() public view returns (Task[] memory) {
         return tasks[msg.sender];
     }
