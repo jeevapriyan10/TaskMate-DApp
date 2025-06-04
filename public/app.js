@@ -1,5 +1,4 @@
 const contractAddress = '0xd9145CCE52D386f254917e481eB44e9943F39138';
-const contractABI = "abi.json";
 
 let web3;
 let contract;
@@ -12,6 +11,8 @@ async function connectWallet() {
       document.getElementById('wallet-status').innerText = `Connected: ${accounts[0]}`;
 
       web3 = new Web3(window.ethereum);
+      const response = await fetch('abi.json');
+      const contractABI = await response.json();
       contract = new web3.eth.Contract(contractABI, contractAddress);
 
       loadTasks();
