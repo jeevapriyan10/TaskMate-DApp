@@ -89,7 +89,17 @@ li {
   align-items: center;
   flex-wrap: wrap;
 }
-
+.button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  
+}
+li.completed {
+  background-color: #dff0d8;
+  text-decoration: line-through;
+}
 button.deleteBtn {
   background-color: #e74c3c;
   color: white;
